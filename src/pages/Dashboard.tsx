@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Menu, MessageSquare, Phone } from "lucide-react";
+import { Menu, LogOut, User } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ComplaintStats from "@/components/dashboard/ComplaintStats";
 import RecentComplaints from "@/components/dashboard/RecentComplaints";
 import AIAssistant from "@/components/dashboard/AIAssistant";
@@ -37,6 +38,12 @@ const Dashboard = () => {
     checkAuth();
   }, [navigate]);
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+    toast.success("Logged out successfully");
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -57,13 +64,27 @@ const Dashboard = () => {
           </Button>
           <h2 className="font-semibold text-foreground">Dashboard</h2>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-sm font-medium text-primary">
-              {userName.charAt(0)}
-            </span>
-          </div>
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-sm font-medium text-primary">
+                  {userName.charAt(0)}
+                </span>
+              </div>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => navigate("/raise-complaint")}>
+              <User className="h-4 w-4 mr-2" />
+              Raise Complaint
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <main className="p-6 max-w-6xl mx-auto space-y-6">
@@ -82,8 +103,9 @@ const Dashboard = () => {
         <Button
           size="icon"
           className="h-14 w-14 rounded-full shadow-lg"
+          onClick={() => navigate("/raise-complaint")}
         >
-          <Phone className="h-6 w-6" />
+          <span className="text-lg font-bold">+</span>
         </Button>
       </div>
     </div>

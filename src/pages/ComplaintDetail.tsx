@@ -81,6 +81,39 @@ const ComplaintDetail = () => {
     };
 
     fetchComplaintDetails();
+
+    // Set up real-time subscription for new messages
+    const channel = supabase
+      .channel(`complaint-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'complaint_messages',
+          filter: `complaint_id=eq.${id}`
+        },
+        async (payload) => {
+          // Fetch the profile for the new message
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", payload.new.user_id)
+            .single();
+
+          const newMessage = {
+            ...payload.new,
+            profiles: { full_name: profile?.full_name || "Unknown" }
+          };
+
+          setMessages((prev) => [...prev, newMessage as any]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id]);
 
   const handleSendMessage = async () => {
@@ -102,19 +135,7 @@ const ComplaintDetail = () => {
     }
 
     setNewMessage("");
-    // Refetch messages
-    const { data: messagesData } = await supabase
-      .from("complaint_messages")
-      .select(`
-        *,
-        profiles:user_id (full_name)
-      `)
-      .eq("complaint_id", id)
-      .order("created_at", { ascending: true });
-
-    if (messagesData) {
-      setMessages(messagesData as any);
-    }
+    toast.success("Message sent");
   };
 
   const getStatusColor = (status: string) => {
