@@ -11,6 +11,7 @@ import ComplaintDetail from "./pages/ComplaintDetail";
 import AdminLogin from "./pages/AdminLogin";
 import Admin from "./pages/Admin";
 import StaffDashboard from "./pages/StaffDashboard";
+import SetupAdmin from "./pages/SetupAdmin";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/complaint/:id" element={<ComplaintDetail />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/setup" element={<SetupAdmin />} />
           <Route path="/staff" element={<StaffDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
