@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Menu, LogOut, User } from "lucide-react";
+import { Menu, LogOut, User, FileText, Plus, List } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import ComplaintStats from "@/components/dashboard/ComplaintStats";
 import RecentComplaints from "@/components/dashboard/RecentComplaints";
 import AIAssistant from "@/components/dashboard/AIAssistant";
@@ -14,6 +15,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -57,11 +59,56 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-border p-4 flex items-center justify-between">
+      <header className="bg-card border-b border-border p-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon">
-            <Menu className="h-5 w-5" />
-          </Button>
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left">
+              <SheetHeader>
+                <SheetTitle>Menu</SheetTitle>
+                <SheetDescription>Navigate to different sections</SheetDescription>
+              </SheetHeader>
+              <div className="mt-6 space-y-2">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start"
+                  onClick={() => {
+                    navigate("/dashboard");
+                    setMenuOpen(false);
+                  }}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start"
+                  onClick={() => {
+                    navigate("/raise-complaint");
+                    setMenuOpen(false);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Raise Complaint
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start"
+                  onClick={() => {
+                    navigate("/my-complaints");
+                    setMenuOpen(false);
+                  }}
+                >
+                  <List className="h-4 w-4 mr-2" />
+                  My Complaints
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
           <h2 className="font-semibold text-foreground">Dashboard</h2>
         </div>
         <DropdownMenu>
