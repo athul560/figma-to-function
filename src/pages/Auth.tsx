@@ -20,7 +20,20 @@ const Auth = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/dashboard");
+        // Get user role and redirect accordingly
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .single();
+
+        if (roleData?.role === "admin") {
+          navigate("/admin");
+        } else if (roleData?.role === "staff") {
+          navigate("/staff");
+        } else {
+          navigate("/dashboard");
+        }
       }
     };
     checkUser();
@@ -32,13 +45,28 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error, data } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+        
+        // Get user role and redirect accordingly
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .single();
+
         toast.success("Welcome back!");
-        navigate("/dashboard");
+        
+        if (roleData?.role === "admin") {
+          navigate("/admin");
+        } else if (roleData?.role === "staff") {
+          navigate("/staff");
+        } else {
+          navigate("/dashboard");
+        }
       } else {
         const { error } = await supabase.auth.signUp({
           email,

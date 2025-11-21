@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import BulkActions from "./BulkActions";
 
 interface Complaint {
   id: string;
@@ -21,6 +23,7 @@ interface Complaint {
 
 const AdminComplaints = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -70,12 +73,42 @@ const AdminComplaints = () => {
     }
   };
 
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAll = () => {
+    setSelectedIds(prev => 
+      prev.length === complaints.length ? [] : complaints.map(c => c.id)
+    );
+  };
+
+  const handleBulkComplete = () => {
+    setSelectedIds([]);
+    fetchComplaints();
+  };
+
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardHeader>
+        <CardTitle>Complaints Management</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {selectedIds.length > 0 && (
+          <BulkActions selectedIds={selectedIds} onComplete={handleBulkComplete} />
+        )}
+        
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={selectedIds.length === complaints.length && complaints.length > 0}
+                  onCheckedChange={toggleAll}
+                />
+              </TableHead>
               <TableHead>ID</TableHead>
               <TableHead>Student</TableHead>
               <TableHead>Title</TableHead>
@@ -89,6 +122,12 @@ const AdminComplaints = () => {
           <TableBody>
             {complaints.map((complaint) => (
               <TableRow key={complaint.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedIds.includes(complaint.id)}
+                    onCheckedChange={() => toggleSelection(complaint.id)}
+                  />
+                </TableCell>
                 <TableCell className="font-mono text-xs">{complaint.complaint_number}</TableCell>
                 <TableCell>{complaint.studentName}</TableCell>
                 <TableCell className="max-w-xs truncate">{complaint.title}</TableCell>
