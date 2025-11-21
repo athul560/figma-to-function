@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Download, FileText, Image as ImageIcon, Paperclip, Send } from "lucide-react";
+import { ArrowLeft, Download, FileText, Image as ImageIcon, Paperclip, Send, User } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import AssignStaffDialog from "@/components/admin/AssignStaffDialog";
 
 interface Complaint {
   id: string;
@@ -18,6 +19,7 @@ interface Complaint {
   priority: string;
   status: string;
   created_at: string;
+  assigned_to?: string;
 }
 
 interface Message {
@@ -44,8 +46,24 @@ const ComplaintDetail = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [assignedStaffName, setAssignedStaffName] = useState<string | null>(null);
+  const [isStaff, setIsStaff] = useState(false);
+
 
   useEffect(() => {
+    const checkStaffStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .single();
+        
+        setIsStaff(roleData?.role === "staff" || roleData?.role === "admin");
+      }
+    };
+
     const fetchComplaintDetails = async () => {
       const { data: complaintData } = await supabase
         .from("complaints")
@@ -55,6 +73,16 @@ const ComplaintDetail = () => {
 
       if (complaintData) {
         setComplaint(complaintData);
+        
+        // Fetch assigned staff name
+        if (complaintData.assigned_to) {
+          const { data: staffProfile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", complaintData.assigned_to)
+            .single();
+          setAssignedStaffName(staffProfile?.full_name || null);
+        }
       }
 
       const { data: messagesData } = await supabase
@@ -80,6 +108,7 @@ const ComplaintDetail = () => {
       }
     };
 
+    checkStaffStatus();
     fetchComplaintDetails();
 
     // Set up real-time subscription for new messages
@@ -177,12 +206,39 @@ const ComplaintDetail = () => {
             <h1 className="text-xl font-bold">Complaint Details</h1>
           </div>
 
-          <div className="flex items-center gap-3 mb-4">
-            <h2 className="text-2xl font-bold">ID: #{complaint.complaint_number}</h2>
-            <Badge variant={getStatusColor(complaint.status) as any}>{complaint.status}</Badge>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold">ID: #{complaint.complaint_number}</h2>
+              <Badge variant={getStatusColor(complaint.status) as any}>{complaint.status}</Badge>
+            </div>
+            {isStaff && complaint && (
+              <AssignStaffDialog
+                complaintId={complaint.id}
+                complaintNumber={complaint.complaint_number}
+                complaintTitle={complaint.title}
+                currentAssignedId={complaint.assigned_to}
+                onAssigned={async () => {
+                  const { data } = await supabase
+                    .from("complaints")
+                    .select("assigned_to")
+                    .eq("id", id)
+                    .single();
+                  
+                  if (data?.assigned_to) {
+                    const { data: staffProfile } = await supabase
+                      .from("profiles")
+                      .select("full_name")
+                      .eq("id", data.assigned_to)
+                      .single();
+                    setAssignedStaffName(staffProfile?.full_name || null);
+                    setComplaint({ ...complaint, assigned_to: data.assigned_to });
+                  }
+                }}
+              />
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">Category</p>
               <p className="font-medium">{complaint.category}</p>
@@ -190,6 +246,19 @@ const ComplaintDetail = () => {
             <div>
               <p className="text-muted-foreground">Priority</p>
               <Badge variant={getPriorityColor(complaint.priority) as any}>{complaint.priority}</Badge>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Assigned To</p>
+              <p className="font-medium flex items-center gap-1">
+                {assignedStaffName ? (
+                  <>
+                    <User className="h-3 w-3" />
+                    {assignedStaffName}
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">Unassigned</span>
+                )}
+              </p>
             </div>
           </div>
         </div>

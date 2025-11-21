@@ -1,1 +1,7 @@
 project_id = "jvicpreqcsfdkhmpegsn"
+
+[functions.setup-admin]
+verify_jwt = false
+
+[functions.send-assignment-email]
+verify_jwt = false

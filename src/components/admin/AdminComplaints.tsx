@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import BulkActions from "./BulkActions";
+import AssignStaffDialog from "./AssignStaffDialog";
 
 interface Complaint {
   id: string;
@@ -18,7 +19,9 @@ interface Complaint {
   priority: string;
   created_at: string;
   user_id: string;
+  assigned_to?: string;
   studentName?: string;
+  assignedName?: string;
 }
 
 const AdminComplaints = () => {
@@ -45,9 +48,20 @@ const AdminComplaints = () => {
             .eq("id", complaint.user_id)
             .single();
           
+          let assignedName = undefined;
+          if (complaint.assigned_to) {
+            const { data: assignedProfile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", complaint.assigned_to)
+              .single();
+            assignedName = assignedProfile?.full_name;
+          }
+          
           return {
             ...complaint,
             studentName: profile?.full_name || "Unknown",
+            assignedName,
           };
         })
       );
@@ -115,8 +129,9 @@ const AdminComplaints = () => {
               <TableHead>Category</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Assigned To</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead>Action</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -138,15 +153,31 @@ const AdminComplaints = () => {
                 <TableCell>
                   <Badge variant={getStatusColor(complaint.status)}>{complaint.status}</Badge>
                 </TableCell>
+                <TableCell>
+                  {complaint.assignedName ? (
+                    <span className="text-sm">{complaint.assignedName}</span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Unassigned</span>
+                  )}
+                </TableCell>
                 <TableCell>{format(new Date(complaint.created_at), "MMM dd, yyyy")}</TableCell>
                 <TableCell>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => navigate(`/complaint/${complaint.id}`)}
-                  >
-                    View
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <AssignStaffDialog
+                      complaintId={complaint.id}
+                      complaintNumber={complaint.complaint_number}
+                      complaintTitle={complaint.title}
+                      currentAssignedId={complaint.assigned_to}
+                      onAssigned={fetchComplaints}
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/complaint/${complaint.id}`)}
+                    >
+                      View
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
