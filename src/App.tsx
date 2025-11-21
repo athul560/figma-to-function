@@ -12,6 +12,7 @@ import AdminLogin from "./pages/AdminLogin";
 import Admin from "./pages/Admin";
 import StaffDashboard from "./pages/StaffDashboard";
 import SetupAdmin from "./pages/SetupAdmin";
+import Settings from "./pages/Settings";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/setup" element={<SetupAdmin />} />
+          <Route path="/admin/settings" element={<Settings />} />
           <Route path="/staff" element={<StaffDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
