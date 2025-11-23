@@ -37,34 +37,56 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      toast.error(error.message);
-      setLoading(false);
-      return;
-    }
-
-    if (data.user) {
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", data.user.id)
-        .single();
-
-      if (roles?.role !== "admin") {
-        await supabase.auth.signOut();
-        toast.error("Access denied. Admin credentials required.");
+      if (error) {
+        console.error("Login error:", error);
+        if (error.message.includes("Invalid login credentials")) {
+          toast.error("Invalid email or password. Please check your credentials.");
+        } else if (error.message.includes("Email not confirmed")) {
+          toast.error("Please confirm your email before logging in.");
+        } else {
+          toast.error(error.message);
+        }
         setLoading(false);
         return;
       }
 
-      navigate("/admin");
+      if (data.user) {
+        const { data: roles, error: roleError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .single();
+
+        if (roleError) {
+          console.error("Role fetch error:", roleError);
+          await supabase.auth.signOut();
+          toast.error("Unable to verify admin access. Please contact support.");
+          setLoading(false);
+          return;
+        }
+
+        if (roles?.role !== "admin") {
+          await supabase.auth.signOut();
+          toast.error("Access denied. Admin credentials required.");
+          setLoading(false);
+          return;
+        }
+
+        toast.success("Login successful!");
+        navigate("/admin");
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
