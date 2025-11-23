@@ -9,6 +9,8 @@ import RaiseComplaint from "./pages/RaiseComplaint";
 import MyComplaints from "./pages/MyComplaints";
 import ComplaintDetail from "./pages/ComplaintDetail";
 import AdminLogin from "./pages/AdminLogin";
+import AdminForgotPassword from "./pages/AdminForgotPassword";
+import AdminResetPassword from "./pages/AdminResetPassword";
 import Admin from "./pages/Admin";
 import StaffDashboard from "./pages/StaffDashboard";
 import SetupAdmin from "./pages/SetupAdmin";
@@ -32,6 +34,8 @@ const App = () => (
           <Route path="/my-complaints" element={<MyComplaints />} />
           <Route path="/complaint/:id" element={<ComplaintDetail />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
+          <Route path="/admin/reset-password" element={<AdminResetPassword />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/setup" element={<SetupAdmin />} />
           <Route path="/admin/settings" element={<Settings />} />
