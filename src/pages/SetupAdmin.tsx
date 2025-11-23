@@ -29,16 +29,54 @@ const SetupAdmin = () => {
       });
 
       if (error) {
+        console.error("Setup error:", error);
+        
+        // Check if user already exists
+        if (error.message?.includes("already been registered") || 
+            error.message?.includes("email_exists")) {
+          toast.error("This email is already registered. Redirecting to login...", {
+            duration: 4000,
+          });
+          setTimeout(() => {
+            navigate("/admin/login");
+          }, 2000);
+          setLoading(false);
+          return;
+        }
+        
         toast.error(error.message || "Failed to create admin user");
         setLoading(false);
         return;
       }
 
-      toast.success("Admin user created successfully!");
+      // Check for error in response data
+      if (data?.error) {
+        console.error("Setup data error:", data.error);
+        
+        if (data.error.includes("already been registered") || 
+            data.error.includes("email_exists")) {
+          toast.error("This email is already registered. Redirecting to login...", {
+            duration: 4000,
+          });
+          setTimeout(() => {
+            navigate("/admin/login");
+          }, 2000);
+          setLoading(false);
+          return;
+        }
+        
+        toast.error(data.error);
+        setLoading(false);
+        return;
+      }
+
+      toast.success("Admin user created successfully! Redirecting to login...");
       setTimeout(() => {
         navigate("/admin/login");
       }, 1500);
+      setLoading(false);
     } catch (error: any) {
+      console.error("Unexpected error:", error);
       toast.error(error.message || "An error occurred");
       setLoading(false);
     }
@@ -52,7 +90,11 @@ const SetupAdmin = () => {
             <Shield className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-2xl">Setup Admin User</CardTitle>
-          <CardDescription>Create the first admin account for the system</CardDescription>
+          <CardDescription>
+            Create the first admin account for the system
+            <br />
+            <span className="text-xs mt-2 block">Already have an admin account? <button onClick={() => navigate("/admin/login")} className="text-primary underline">Login here</button></span>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSetup} className="space-y-4">
