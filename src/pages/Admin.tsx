@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, Users, FileText, LogOut, Settings } from "lucide-react";
+import { toast } from "sonner";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminComplaints from "@/components/admin/AdminComplaints";
@@ -19,38 +20,76 @@ const Admin = () => {
   }, []);
 
   const checkAdminAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        toast.error("Authentication error. Please login again.");
+        navigate("/admin/login");
+        return;
+      }
+
+      if (!session) {
+        navigate("/admin/login");
+        return;
+      }
+
+      const { data: roles, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (roleError) {
+        console.error("Role fetch error:", roleError);
+        toast.error("Unable to verify admin access.");
+        navigate("/admin/login");
+        return;
+      }
+
+      if (roles?.role !== "admin") {
+        toast.error("Access denied. Admin privileges required.");
+        navigate("/admin/login");
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+        // Continue anyway, just use email as fallback
+        setAdminName(session.user.email || "Admin");
+      } else if (profile) {
+        setAdminName(profile.full_name);
+      }
+      
+      setLoading(false);
+    } catch (err) {
+      console.error("Unexpected error in checkAdminAuth:", err);
+      toast.error("An error occurred. Please try again.");
       navigate("/admin/login");
-      return;
     }
-
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", session.user.id)
-      .single();
-
-    if (roles?.role !== "admin") {
-      navigate("/admin/login");
-      return;
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", session.user.id)
-      .single();
-
-    if (profile) {
-      setAdminName(profile.full_name);
-    }
-    setLoading(false);
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/admin/login");
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Logout error:", error);
+        toast.error("Error logging out. Please try again.");
+        return;
+      }
+      toast.success("Logged out successfully");
+      navigate("/admin/login");
+    } catch (err) {
+      console.error("Unexpected logout error:", err);
+      toast.error("An error occurred while logging out.");
+    }
   };
 
   if (loading) {
